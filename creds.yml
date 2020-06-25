@@ -1,0 +1,24 @@
+---
+# defaults file for bigip-15
+provider:
+    password:
+    server: 192.168.101.182
+    user: admin
+    validate_certs: false
+    server_port: 443
+
+# AS3
+authUrl: "/mgmt/shared/authn/login"
+as3CheckUrl: "/mgmt/shared/appsvcs/info"
+
+# do
+doUrl: "/mgmt/shared/declarative-onboarding"
+doCheckUrl: "/mgmt/shared/declarative-onboarding/available"
+
+
+# ts
+tsUrl: "/mgmt/shared/telemetry/declare"
+tsCheckUrl: "/mgmt/shared/telemetry/available"
+
+filePath: "files"
+as3rpm: "f5-appsvcs-3.20.0-3.noarch.rpm"

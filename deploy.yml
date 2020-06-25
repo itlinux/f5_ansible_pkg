@@ -1,0 +1,119 @@
+---
+- hosts: localhost
+  connection: local
+  vars_files:
+    - creds.yml
+  tasks:
+    - name: Get auth token
+      uri:
+        url: "https://{{ provider.server }}{{ authUrl }}"
+        method: POST
+        body_format: json
+        return_content: true
+        validate_certs: false
+        body: {"username":"{{ provider.user }}","password":"{{ provider.password }}","loginProviderName":"tmos"}
+        status_code: 200
+      register: token
+      retries: 3
+      delay: 30
+      delegate_to: localhost
+      tags:
+        - uploads
+
+    - name: Check AS3 status
+      uri:
+        url: "https://{{ provider.server }}{{ as3CheckUrl }}"
+        method: GET
+        headers:
+          X-F5-Auth-Token: "{{ token.json.token.token }}"
+        return_content: true
+        validate_certs: false
+        status_code: 200
+      register: as3_check
+      delegate_to: localhost
+      when: token.json.token.token == ""
+      tags:
+        - uploads
+
+    - name: Check DO status
+      uri:
+        url: "https://{{ provider.server }}{{ doCheckUrl }}"
+        method: GET
+        headers:
+          X-F5-Auth-Token: "{{ token.json.token.token }}"
+        return_content: true
+        validate_certs: false
+        status_code: 200
+      register: do_check
+      delegate_to: localhost
+      when: token.json.token.token == ""
+      tags:
+        - uploads
+
+    - name: Check TS status
+      uri:
+        url: "https://{{ provider.server }}{{ tsCheckUrl }}"
+        method: GET
+        headers:
+          X-F5-Auth-Token: "{{ token.json.token.token }}"
+        return_content: true
+        validate_certs: false
+        status_code: 200
+      register: do_check
+      delegate_to: localhost
+      when: token.json.token.token == ""
+      tags:
+        - uploads
+
+    - name: Retrieve AS3 Install Version
+      find:
+        paths: ./files
+        patterns: "f5-appsvcs*.rpm"
+      register: as3rpm
+      delegate_to: localhost
+      tags:
+        - as3install
+
+    - name: Retrieve DO Install Version
+      find:
+        paths: ./files
+        patterns: "f5-dec*.rpm"
+      register: dorpm
+      delegate_to: localhost
+      tags:
+        - doinstall
+
+    - name: Retrieve TS Install Version
+      find:
+        paths: ./files
+        patterns: "f5-tele*.rpm"
+      register: tsrpm
+      delegate_to: localhost
+      tags:
+        - telinstall
+
+    - name: pause 5 sec
+      pause:
+        seconds: 5
+
+    - name: Install DO
+      bigip_lx_package:
+         provider: "{{ provider  }}"
+         package: "{{ dorpm.files[0].path }}"
+      delegate_to: localhost
+
+    - name: Install AS3
+      bigip_lx_package:
+        provider: "{{ provider }}"
+        package: "{{ as3rpm.files[0].path }}"
+      delegate_to: localhost
+      tags:
+        - as3install
+
+    - name: Install TS
+      bigip_lx_package:
+        provider: "{{ provider }}"
+        package: "{{ tsrpm.files[0].path }}"
+      delegate_to: localhost
+      tags:
+        - tsinstall
