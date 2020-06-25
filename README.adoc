@@ -1,1 +1,31 @@
-= First Push 
+== F5 to push DO, AS3, TS packages
+
+
+This playbook pushes only the PKG for DO, AS3, and TS.
+
+=== Requirements
+
+To run this playbook you from a Mac (OSX) you need to install rpm pkg. You need to download the PKGs and place them into the files folder.
+
+=== Install Dependency for MacBook (OSX)
+
+----
+brew install rpm
+----
+
+=== Running the playbook
+The playbook uses tags in case you want to just push only one of the PKG (RPM), or without it will do them all.
+
+----
+ansible-playbook deploy.yml -t <tag you want>
+----
+
+
+=== License
+
+
+Apache
+
+=== Author Information
+
+Remo Mattei
