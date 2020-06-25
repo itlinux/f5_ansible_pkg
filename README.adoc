@@ -1,4 +1,4 @@
-== F5 to push DO, AS3, TS packages
+== F5 to push DO, AS3, TS and FAST packages
 
 
 This playbook pushes only the PKG for DO, AS3, and TS.
