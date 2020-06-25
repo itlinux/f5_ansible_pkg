@@ -4,7 +4,7 @@
   vars_files:
     - creds.yml
   tasks:
-    - name: Get auth token
+    - name: Get Auth Token
       uri:
         url: "https://{{ provider.server }}{{ authUrl }}"
         method: POST
@@ -19,6 +19,11 @@
       delegate_to: localhost
       tags:
         - uploads
+        - status
+        - as3install
+        - doinstall
+        - tsinstall
+        - fastinstall
 
     - name: Check AS3 status
       uri:
@@ -34,6 +39,7 @@
       when: token.json.token.token == ""
       tags:
         - uploads
+        - status
 
     - name: Check DO status
       uri:
@@ -49,6 +55,7 @@
       when: token.json.token.token == ""
       tags:
         - uploads
+        - status
 
     - name: Check TS status
       uri:
@@ -59,15 +66,32 @@
         return_content: true
         validate_certs: false
         status_code: 200
-      register: do_check
+      register: ts_check
       delegate_to: localhost
       when: token.json.token.token == ""
       tags:
         - uploads
+        - status
+
+    - name: Check FAST status
+      uri:
+        url: "https://{{ provider.server }}{{ fastCheckUrl }}"
+        method: GET
+        headers:
+          X-F5-Auth-Token: "{{ token.json.token.token }}"
+        return_content: true
+        validate_certs: false
+        status_code: 200
+      register: fast_check
+      delegate_to: localhost
+      when: token.json.token.token == ""
+      tags:
+        - uploads
+        - status
 
     - name: Retrieve AS3 Install Version
       find:
-        paths: ./files
+        paths: "{{ filePath }}"
         patterns: "f5-appsvcs*.rpm"
       register: as3rpm
       delegate_to: localhost
@@ -76,7 +100,7 @@
 
     - name: Retrieve DO Install Version
       find:
-        paths: ./files
+        paths: "{{ filePath }}"
         patterns: "f5-dec*.rpm"
       register: dorpm
       delegate_to: localhost
@@ -85,24 +109,33 @@
 
     - name: Retrieve TS Install Version
       find:
-        paths: ./files
+        paths: "{{ filePath }}"
         patterns: "f5-tele*.rpm"
       register: tsrpm
       delegate_to: localhost
       tags:
-        - telinstall
+        - tsinstall
+
+    - name: Retrieve FAST Install Version
+      find:
+        paths: "{{ filePath }}"
+        patterns: "f5-appsvcs-temp*.rpm"
+      register: fastrpm
+      delegate_to: localhost
+      tags:
+        - fastinstall
 
     - name: pause 5 sec
       pause:
         seconds: 5
 
-    - name: Install DO
+    - name: Install DO RPM
       bigip_lx_package:
          provider: "{{ provider  }}"
          package: "{{ dorpm.files[0].path }}"
       delegate_to: localhost
 
-    - name: Install AS3
+    - name: Install AS3 RPM
       bigip_lx_package:
         provider: "{{ provider }}"
         package: "{{ as3rpm.files[0].path }}"
@@ -110,10 +143,18 @@
       tags:
         - as3install
 
-    - name: Install TS
+    - name: Install TS RPM
       bigip_lx_package:
         provider: "{{ provider }}"
         package: "{{ tsrpm.files[0].path }}"
       delegate_to: localhost
       tags:
         - tsinstall
+
+    - name: Install FAST RPM
+      bigip_lx_package:
+        provider: "{{ provider }}"
+        package: "{{ fastrpm.files[0].path }}"
+      delegate_to: localhost
+      tags:
+        - fastinstall
